@@ -143,7 +143,7 @@ int main()
 
     char prevheld_char = 0;
     char debouncing_char = 0;
-    char exchange_char = 0; /* char from the second key of prev packet goes to the first key of the next */
+    char exchange_char = 0;
     char prev_single = 0;
 
     for (;;)
@@ -262,7 +262,7 @@ int main()
                 else if ((cursor_col == DISPLAY_COLS - 1) && (cursor_row == DISPLAY_ROWS - 1))
                 {
                     cursor_col = 0; /* index out of the box, line reaches the bottom, textbox screws down */
-                    scroll_textbox(textbox, textcount, TEXT_ROWS, DISPLAY_ROWS);
+                    // scroll_textbox(textbox, textcount, TEXT_ROWS, DISPLAY_ROWS);
                 }
                 else
                 {
@@ -297,7 +297,7 @@ int main()
                 else if ((cursor_col == DISPLAY_COLS - 1) && (cursor_row == DISPLAY_ROWS - 1))
                 {
                     cursor_col = 0; /* index reaches the bottom, textbox screws down */
-                    scroll_textbox(textbox, textcount, TEXT_ROWS, DISPLAY_ROWS);
+                    // scroll_textbox(textbox, textcount, TEXT_ROWS, DISPLAY_ROWS);
                 }
                 else
                 {
@@ -376,26 +376,21 @@ void *network_thread_f(void *ignored)
 /* Scroll down the textbox */
 void scroll_textbox(char *buffer, int count, int window_size, int lower_bound)
 {
-    for (int index = 1; index <= window_size; index++)
-    {
-        for (int col = 0; col < 64; col++)
-        {
-            fbputchar(' ', lower_bound - index, col); /* clear the row, prepare for rewrite */
+    for (int i = 1; i <= window_size; i++) {
+        for (int j = 0; j < 64; j++) {
+            fbputchar(' ', lower_bound - i, j); /* clear the row, prepare for rewrite */
         }
     }
     int offset = 0;
-    for (int index = 2; index <= window_size; index++)
-    {
-        for (int col = 63; col >= 0; col--)
-        {
+    for (int i = 2; i <= window_size; i++) {
+        for (int j = 63; j >= 0; j--) {
             offset += 1;
             char c = buffer[count - offset];
-            fbputchar(c, lower_bound - index, col); /* fill the row */
+            fbputchar(c, lower_bound - i, j); /* fill the row */
         }
     }
 }
 
-/* Scroll up the textbox */
 void scrollup_textbox(char *buffer, int count, int window_size, int lower_bound) {
     for (int i = 1; i <= window_size; i++) {
         for (int j = 63; j >= 0; j--) {
