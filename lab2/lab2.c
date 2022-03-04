@@ -148,10 +148,8 @@ int main()
 
     for (;;)
     {
-        int has_second = 0;
         int input_counts = 0;
         libusb_interrupt_transfer(keyboard, endpoint_address, (unsigned char *)&packet, sizeof(packet), &transferred, 0);
-
 
         if (transferred == sizeof(packet))
         {
@@ -205,11 +203,6 @@ int main()
             }
 
             /* -------- conditional checks for number of inputs  -------- */
-            /* check if there are two key presses from the packet */
-            if (packet.keycode[1] != 0x00)
-            {
-                has_second = 1;
-            }
 
             /* check if it's an end signifier */
             if ((packet.modifiers == 0x00) && (packet.keycode[0] == 0x00) && (packet.keycode[1] == 0x00))
@@ -249,36 +242,12 @@ int main()
                     cursor_col += 1;
                 }
             }
+            /*
             else if ((!has_second) && (debouncing_char != 0) && (exchange_char == k1))
             {
                 prev_single = 1;
                 exchange_char = 0;
-            }
-
-            /*
-            if ((has_second) && (exchange_char != k2))
-            {
-                input_counts += 1;
-                fbputchar(k2, cursor_row, cursor_col);
-                textbox[textcount++] = k2;
-
-                debouncing_char = k2;
-                prevheld_char = 0;
-                exchange_char = k2;
-                prev_single = 0;
-
-                if ((cursor_col == DISPLAY_COLS - 1) && (cursor_row < DISPLAY_ROWS - 1))
-                {
-                    cursor_col = 0;
-                    cursor_row += 1;
-                }
-                else if ((cursor_col == DISPLAY_COLS - 1) && (cursor_row == DISPLAY_ROWS - 1)) {
-                    cursor_col = 0;
-                }
-                else {
-                    cursor_col += 1;
-                }
-            } */
+            }*/
 
             fbputchar(cursor, cursor_row, cursor_col);
         }
@@ -301,7 +270,6 @@ void print_empty_space(int start_i, int end_i, int start_j, int end_j){
         }
     }
 }
-
 
 
 void *network_thread_f(void *ignored){
