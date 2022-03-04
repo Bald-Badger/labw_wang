@@ -160,6 +160,7 @@ int main()
 
             /* ------ looking at some special keyboard operations ------ */
 
+            /*
             if (packet.keycode[0] == 0x28 || packet.keycode[1] == 0x28) // first key or second key pressed
             {
                 textbox[textcount] = '\0';
@@ -177,7 +178,7 @@ int main()
                     }
                 }
                 continue;
-            }
+            }*/
 
 
             if (packet.keycode[0] == 0x2a)
