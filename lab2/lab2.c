@@ -275,7 +275,7 @@ int main()
             fbputchar(' ', cursor_row, cursor_col); /* erase cursor */
 
             /* handle character from the first input */
-            if ((prev_single || debouncing_char == 0) && (!has_second || prevheld_char != ck1) && (exchange_char != ck1))
+            if ((prev_single || debouncing_char == 0) && (!has_second || prevheld_char != k1) && (exchange_char != k1))
             {
                 input_counts += 1;
                 fbputchar(ck1, cursor_row, cursor_col); /* display input */
@@ -313,7 +313,7 @@ int main()
             if ((has_second) && (exchange_char != k2))
             {
                 input_counts += 1;
-                fbputchar(ck2, cursor_row, cursor_col);
+                fbputchar(k2, cursor_row, cursor_col);
                 /* put the second keyboard input in a buffer */
                 textbox[textcount++] = k2;
 
