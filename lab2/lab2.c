@@ -158,7 +158,6 @@ int main()
             sprintf(keystate, "%02x %02x %02x", packet.modifiers, packet.keycode[0], packet.keycode[1]);
             printf("original keystate: %s\n", keystate); // show on the terminal
 
-            /* ------ looking at some special keyboard operations ------ */
 
             if (packet.keycode[0] == 0x28 || packet.keycode[1] == 0x28) // first key or second key pressed
             {
@@ -193,11 +192,6 @@ int main()
                 {
                     cursor_col = DISPLAY_COLS - 1; /* all things left fit in the top line */
                     cursor_row -= 1;
-                }
-                else if (((cursor_col == 0) && (cursor_row == DISPLAY_ROWS - 1) && (textcount > DISPLAY_COLS)))
-                {
-                    cursor_col = DISPLAY_COLS - 1;                                 /* let two lines be filled */
-                    //scrollup_textbox(textbox, textcount, TEXT_ROWS, DISPLAY_ROWS); /* move down one line, and print the first line */
                 }
                 else
                 {
@@ -261,7 +255,7 @@ int main()
                 exchange_char = 0;
             }
 
-
+            /*
             if ((has_second) && (exchange_char != k2))
             {
                 input_counts += 1;
@@ -284,7 +278,7 @@ int main()
                 else {
                     cursor_col += 1;
                 }
-            }
+            } */
 
             fbputchar(cursor, cursor_row, cursor_col);
         }
@@ -361,42 +355,6 @@ void *network_thread_f(void *ignored){
 
     return NULL;
 }
-
-
-/* Scroll down the textbox */ // delete
-void scroll_textbox(char *buffer, int count, int window_size, int lower_bound)
-{
-    for (int i = 1; i <= window_size; i++) {
-        for (int j = 0; j < 64; j++) {
-            fbputchar(' ', lower_bound - i, j); /* clear the row, prepare for rewrite */
-        }
-    }
-    int offset = 0;
-    for (int i = 2; i <= window_size; i++) {
-        for (int j = 63; j >= 0; j--) {
-            offset += 1;
-            char c = buffer[count - offset];
-            fbputchar(c, lower_bound - i, j); /* fill the row */
-        }
-    }
-}
-
-void scrollup_textbox(char *buffer, int count, int window_size, int lower_bound) {
-    for (int i = 1; i <= window_size; i++) {
-        for (int j = 63; j >= 0; j--) {
-            fbputchar(' ', lower_bound - i, j);
-        }
-    }
-    int offset = 0;
-    for (int i = 1; i <= window_size; i++) {
-        for (int j = 63; j >= 0; j--) {
-            char c = buffer[count - offset];
-            fbputchar(c, lower_bound - i, j);
-            offset += 1;
-        }
-    }
-}
-
 
 int get_acsii(const char * str, int start, int end) {
     // 1.key code 2 int
