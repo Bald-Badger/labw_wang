@@ -396,22 +396,17 @@ void scroll_textbox(char *buffer, int count, int window_size, int lower_bound)
 }
 
 /* Scroll up the textbox */
-void scrollup_textbox(char *buffer, int count, int window_size, int lower_bound)
-{
-    for (int index = 1; index <= window_size; index++)
-    {
-        for (int col = 63; col >= 0; col--)
-        {
-            fbputchar(' ', lower_bound - index, col); /* clear the rows, prepare for rewrite */
+void scrollup_textbox(char *buffer, int count, int window_size, int lower_bound) {
+    for (int i = 1; i <= window_size; index++) {
+        for (int j = 63; j >= 0; j--) {
+            fbputchar(' ', lower_bound - i, j);
         }
     }
     int offset = 0;
-    for (int index = 1; index <= window_size; index++)
-    {
-        for (int col = 63; col >= 0; col--)
-        {
+    for (int i = 1; i <= window_size; index++) {
+        for (int j = 63; j >= 0; j--) {
             char c = buffer[count - offset];
-            fbputchar(c, lower_bound - index, col); /* fill the row */
+            fbputchar(c, lower_bound - i, j);
             offset += 1;
         }
     }
