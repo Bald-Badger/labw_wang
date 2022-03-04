@@ -278,7 +278,7 @@ int main()
             if ((prev_single || debouncing_char == 0) && (!has_second || prevheld_char != k1) && (exchange_char != k1))
             {
                 input_counts += 1;
-                fbputchar(ck1, cursor_row, cursor_col); /* display input */
+                fbputchar(k1, cursor_row, cursor_col); /* display input */
                 /* put the first keyboard inputs in a buffer, make it avaliable to be sent */
                 textbox[textcount++] = k1;
 
