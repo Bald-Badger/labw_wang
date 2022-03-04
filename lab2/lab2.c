@@ -21,8 +21,6 @@
 #define SERVER_HOST "128.59.19.114"
 #define SERVER_PORT 42000
 
-#define BUFFER_SIZE 128
-#define SMALL_BUFFER_SIZE 48 /* 47 + 1 null terminator */
 #define TEXTBOX_BUFFER 1024
 #define DIALOGUE_BUFFER 2048
 
@@ -113,7 +111,6 @@ int main()
         exit(1);
     }
 
-
     // clean screen TODO
     fbputs("Press any key to clean screen", 13, 10); // row col
     for (;;) {
@@ -153,9 +150,7 @@ int main()
     {
         int has_second = 0;
         int input_counts = 0;
-
-        libusb_interrupt_transfer(keyboard, endpoint_address,
-                                  (unsigned char *)&packet, sizeof(packet), &transferred, 0);
+        libusb_interrupt_transfer(keyboard, endpoint_address, (unsigned char *)&packet, sizeof(packet), &transferred, 0);
 
 
         if (transferred == sizeof(packet))
@@ -223,14 +218,6 @@ int main()
                 textcount -= 1;
                 textbox[textcount] = 0;
                 continue;
-            }
-
-            if (packet.keycode[0] == 0x5c)
-            { /* left arrow pressed */
-            }
-
-            if (packet.keycode[0] == 0x5e)
-            { /* right arrow pressed */
             }
 
             /* -------- conditional checks for number of inputs  -------- */
@@ -336,19 +323,19 @@ int main()
     return 0;
 }
 
+/*
 void *network_thread_f(void *ignored)
 {
-    char recvBuf[BUFFER_SIZE];
+    int buff_size = 200;
+    char socket_buff[buff_size];
     int n;
     int server_msg_rows; // incoming msg rows
     char dialogueBuf[DIALOGUE_ROWS][DISPLAY_COLS];
-    /* Receive data */
-    while ((n = read(sockfd, &recvBuf, BUFFER_SIZE - 1)) > 0)
+
+    while ((n = read(sockfd, &recvBuf, buff_size - 1)) > 0)
     {
-        printf("thread is listening...\n");
         int col = 0;
         recvBuf[n] = '\0';
-        printf("has listened: %s\n", recvBuf);
         if (n % 4 == 0)
         {
             server_msg_rows = n / 64;
@@ -357,8 +344,6 @@ void *network_thread_f(void *ignored)
         {
             server_msg_rows = n / 64 + 1;
         }
-
-        // printf("%s", recvBuf);
 
         if (server_msg_rows + dialogue_row > DIALOGUE_ROWS)
         {
@@ -409,7 +394,21 @@ void *network_thread_f(void *ignored)
 
     return NULL;
 }
+*/
 
+void *network_thread_f(void *ignored)
+{
+    char recvBuf[BUFFER_SIZE];
+    int n;
+    /* Receive data */
+    while ( (n = read(sockfd, &recvBuf, BUFFER_SIZE - 1)) > 0 ) {
+        recvBuf[n] = '\0';
+        printf("%s", recvBuf);
+        fbputs(recvBuf, 8, 0);
+    }
+
+    return NULL;
+}
 
 
 /* Scroll down the textbox */
