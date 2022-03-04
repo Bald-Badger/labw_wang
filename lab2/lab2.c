@@ -327,7 +327,7 @@ void *network_thread_f(void *ignored)
     int server_msg_rows; // incoming msg rows
     char dialogueBuf[DIALOGUE_ROWS][DISPLAY_COLS];
 
-    while ((n = read(sockfd, &recvBuf, buff_size - 1)) > 0)
+    while ((n = read(sockfd, &socket_buff, buff_size - 1)) > 0)
     {
         int col = 0;
         recvBuf[n] = '\0';
