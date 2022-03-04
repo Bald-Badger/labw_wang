@@ -397,13 +397,13 @@ void scroll_textbox(char *buffer, int count, int window_size, int lower_bound)
 
 /* Scroll up the textbox */
 void scrollup_textbox(char *buffer, int count, int window_size, int lower_bound) {
-    for (int i = 1; i <= window_size; index++) {
+    for (int i = 1; i <= window_size; i++) {
         for (int j = 63; j >= 0; j--) {
             fbputchar(' ', lower_bound - i, j);
         }
     }
     int offset = 0;
-    for (int i = 1; i <= window_size; index++) {
+    for (int i = 1; i <= window_size; i++) {
         for (int j = 63; j >= 0; j--) {
             char c = buffer[count - offset];
             fbputchar(c, lower_bound - i, j);
