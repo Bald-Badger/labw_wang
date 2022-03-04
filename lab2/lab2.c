@@ -113,25 +113,22 @@ int main()
         exit(1);
     }
 
-    /* ------------------------ code added below ------------------------ */
-    /* Read inputs from socket and print before the program starts */
-    /* incoming information shouldn't exceed BUFFER_SIZE bits */
-    char tempBuf[SMALL_BUFFER_SIZE];
+    /*
+    int buff_size = 48;
+    char type_buff[buff_size];
     int n;
     int line_num = 20;
 
-    /* reading and printing message from server before it starts */
-    n = read(sockfd, &tempBuf, SMALL_BUFFER_SIZE - 1);
+    n = read(sockfd, &tempBuf, buff_size - 1);
     tempBuf[n] = '\0'; /* make sure the string is null-terminated */
     printf("%s", tempBuf);
-    /* divide message been read into multiple lines */
     if (line_num < DISPLAY_ROWS)
     {
         fbputs(tempBuf, line_num, 10);
         line_num += 1;
-    }
+    } */
 
-    // clean screen
+    // clean screen TODO
     fbputs("Press any key to clean screen", 13, 10); // row col
     for (;;) {
         libusb_interrupt_transfer(keyboard, endpoint_address, (unsigned char *) &packet, sizeof(packet), &transferred, 0);
