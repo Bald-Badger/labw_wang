@@ -277,7 +277,7 @@ void *network_thread_f(void *ignored){
         if (n % 4 == 0) rows = n / 64;
         else rows = n / 64 + 1;
 
-        if (server_rows + rows > 21)
+        if (server_row + rows > 21)
         {
             int delete_rows = rows + dialogue_row - 21;
             for (int i = 0; i < delete_rows; i++) {
