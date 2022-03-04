@@ -31,14 +31,6 @@
 #define DIALOGUE_ROWS 21
 #define TEXT_ROWS 2
 
-/*
- * References:
- *
- * http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
- * http://www.thegeekstuff.com/2011/12/c-socket-programming/
- *
- */
-
 int sockfd;           /* Socket file descriptor */
 int dialogue_row = 0; // display server msg on dialogue_row
 
@@ -48,13 +40,11 @@ uint8_t endpoint_address;
 pthread_t network_thread;
 void *network_thread_f(void *);
 
+int get_acsii(const char *, int, int);
 void clear_display();
 void draw_cutline();
 void scroll_textbox(char *, int, int, int);
 void scrollup_textbox(char *, int, int, int);
-int hex2int(char *);
-void slice_str(const char *, char *, size_t, size_t);
-char dec2chr(int);
 char handle_modifier(int, int);
 
 int main()
@@ -137,25 +127,25 @@ int main()
         line_num += 1;
     }
 
-    fbputs("Press Any Key to Start", 12, 10);
-
-    /* Program initialization upon pressing a key */
-    for (;;)
-    {
-        libusb_interrupt_transfer(keyboard, endpoint_address,
-                                  (unsigned char *)&packet, sizeof(packet),
-                                  &transferred, 0);
-        if (transferred == sizeof(packet))
-        {
-            sprintf(keystate, "%02x %02x %02x", packet.modifiers, packet.keycode[0],
-                    packet.keycode[1]);
+    // clean screen
+    fbputs("Press any key to clean screen", 13, 10); // row col
+    for (;;) {
+        libusb_interrupt_transfer(keyboard, endpoint_address, (unsigned char *) &packet, sizeof(packet), &transferred, 0);
+        if (transferred == sizeof(packet)) {
+            sprintf(keystate, "first print %02x %02x %02x", packet.modifiers, packet.keycode[0], packet.keycode[1]);
             printf("%s\n", keystate);
-            if ((packet.modifiers != 0x00) | (packet.keycode[0] != 0x00) |
-                (packet.keycode[1] != 0x00))
-            { /* a key pressed */
-                clear_display();
-                draw_cutline();
-                break;
+            if ((packet.modifiers != 0x00) || (packet.keycode[0] != 0x00) || (packet.keycode[1] != 0x00)) {
+                // 0.1 clean screen
+                for (int i = 0; i < ROWS; i++) {
+                    for (int j = 0; j < COLS; j++) {
+                        fbputchar(' ', i, j);
+                    }
+                }
+                // 0.2 draw first line
+                for (int j = 0; j < COLS; j++) {
+                    fbputchar('*', TEXT_START_ROW, j);
+                }
+                break; // only one time
             }
         }
     }
@@ -163,8 +153,6 @@ int main()
     char cursor;
     cursor = 95; /* ASCII entry, underline serves as cursor */
     fbputchar(cursor, cursor_row, cursor_col);
-
-    /* ------------------------ code added above ------------------------ */
 
     /* Start the network thread */
     pthread_create(&network_thread, NULL, network_thread_f, NULL);
@@ -181,6 +169,8 @@ int main()
 
         libusb_interrupt_transfer(keyboard, endpoint_address,
                                   (unsigned char *)&packet, sizeof(packet), &transferred, 0);
+
+
         if (transferred == sizeof(packet))
         {
             sprintf(keystate, "%02x %02x %02x", packet.modifiers, packet.keycode[0], packet.keycode[1]);
@@ -274,6 +264,7 @@ int main()
             }
 
             /* ------------- put keyboard inputs to textbox below ------------- */
+            /*
             char ck1, ck2;
             char modifier[3], key1[3], key2[3];
             slice_str(keystate, modifier, 0, 1);
@@ -285,6 +276,14 @@ int main()
             printf("hex: %s, dec: %d\n", modifier, m);
             printf("hex: %s, dec: %d\n", key1, k1);
             printf("hex: %s, dec: %d\n", key2, k2);
+            */
+
+
+            // 1. keystate to char "01 03 04"
+            int m = get_acsii(keystate, 0, 1);
+            int ck1 = get_acsii(keystate, 3, 4);
+            int ck2 = get_acsii(keystate, 6, 7);
+            //printf("%d, %d, %d\n", m , key1, key2);
 
             fbputchar(' ', cursor_row, cursor_col); /* erase cursor */
             ck1 = dec2chr(k1);
@@ -448,28 +447,7 @@ void *network_thread_f(void *ignored)
     return NULL;
 }
 
-/* ------------------------ extra helper functions below ------------------------ */
-/* Clear everything in the display */
-void clear_display()
-{
-    for (int row = 0; row < DISPLAY_ROWS; row++)
-    {
-        for (int col = 0; col < DISPLAY_COLS; col++)
-        {
-            fbputchar(' ', row, col); /* clear the row, prepare for rewrite */
-        }
-    }
-}
 
-/* Draw cutline between dialogue box and textbox */
-void draw_cutline()
-{
-    /* Draw rows of asterisks across dialogue window and textbox */
-    for (int col = 0; col < 64; col++)
-    {
-        fbputchar('*', DISPLAY_ROWS - TEXT_ROWS - 1, col);
-    }
-}
 
 /* Scroll down the textbox */
 void scroll_textbox(char *buffer, int count, int window_size, int lower_bound)
@@ -515,64 +493,6 @@ void scrollup_textbox(char *buffer, int count, int window_size, int lower_bound)
     }
 }
 
-/* hexadecimal to decimal conversion */
-int hex2int(char *hex)
-{
-    int decimal = 0, base = 1;
-    int length = strlen(hex);
-    for (int i = length--; i >= 0; i--)
-    {
-        if (hex[i] >= '0' && hex[i] <= '9')
-        {
-            decimal += (hex[i] - 48) * base;
-            base *= 16;
-        }
-        else if (hex[i] >= 'A' && hex[i] <= 'F')
-        {
-            decimal += (hex[i] - 55) * base;
-            base *= 16;
-        }
-        else if (hex[i] >= 'a' && hex[i] <= 'f')
-        {
-            decimal += (hex[i] - 87) * base;
-            base *= 16;
-        }
-    }
-    return decimal;
-}
-
-void slice_str(const char *str, char *buffer, size_t start, size_t end)
-{
-    size_t j = 0;
-    for (size_t i = start; i <= end; ++i)
-    {
-        buffer[j++] = str[i];
-    }
-    buffer[j] = 0;
-}
-
-/* ASCII index conversion */
-char dec2chr(int key)
-{
-    if (key >= 4 && key <= 29)
-    {
-        key += 93; // lower case by default
-    }
-    else if (key >= 30 && key <= 38)
-    {
-        key += 19; // numerical conversion of 30 to 38
-    }
-    else if (key == 39)
-    {
-        key = 48; // numerical conversion of 0
-    }
-    else if (key == 44)
-    {
-        key = 32; // space
-    }
-    return key;
-}
-
 char handle_modifier(int m, int k)
 {
     if (m == 2)
@@ -582,3 +502,24 @@ char handle_modifier(int m, int k)
     return k;
 }
 
+
+int get_acsii(const char * str, int start, int end) {
+    // 1.key code 2 int
+    int res = 0;
+    int i = start;
+    while (i <= end) {
+        if ('0' <= str[i] && str[i] <= '9') {
+            res  = res * 16 + str[i] - 48;
+        } else if ('A' <= str[i] && str[i] <= 'F') {
+            res  = res * 16 + str[i] - 55;
+        } else if ('a' <= str[i] && str[i] <= 'f') {
+            res  = res * 16 + str[i] - 87;
+        }
+        i += 1;
+    }
+    // 2. int 2 ascii
+    if (res >= 4 && res <= 29) {
+        res += 93;
+    }
+    return res;
+}
