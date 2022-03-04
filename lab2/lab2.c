@@ -338,7 +338,7 @@ void *network_thread_f(void *ignored)
         {
             int delete_rows = server_msg_rows + dialogue_row - DIALOGUE_ROWS;
             for (int i = 0; i < delete_rows; i++) {
-                memset(dialogueBuf[i], '\0', sizeof(dialogueBuf[k]));
+                memset(dialogueBuf[i], '\0', sizeof(dialogueBuf[i]));
                 for (int j = 0; j < DISPLAY_COLS; j++) {
                     fbputchar(' ', i, j);
                 }
