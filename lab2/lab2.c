@@ -164,7 +164,7 @@ int main()
                 memset(textbox, '\0', textcount);
                 textcount = 0;
                 cursor_col = 0;
-                cursor_row = DIALOGUE_ROWS + 1;
+                cursor_row = 22;
                 print_empty_space(cursor_row,DISPLAY_ROWS,0,DISPLAY_COLS);
                 continue;
             }
@@ -217,9 +217,9 @@ int main()
             int k1 = get_acsii(keystate, 3, 4);
             int k2 = get_acsii(keystate, 6, 7);
 
-            fbputchar(' ', cursor_row, cursor_col); /* erase cursor */
+            fbputchar(' ', cursor_row, cursor_col);
 
-            if ((prev_single || debouncing_char == 0) && (!has_second || prevheld_char != k1) && (exchange_char != k1))
+            if ((prev_single || debouncing_char == 0) && (prevheld_char != k1) && (exchange_char != k1))
             {
                 input_counts += 1;
                 fbputchar(k1, cursor_row, cursor_col);
@@ -277,7 +277,7 @@ void *network_thread_f(void *ignored){
         int col = 0;
         recvBuf[n] = '\0';
         if (n % 4 == 0) rows = n / 64;
-        else server_msg_rows = n / 64 + 1;
+        else rows = n / 64 + 1;
 
         if (server_msg_rows + dialogue_row > 21)
         {
@@ -291,13 +291,13 @@ void *network_thread_f(void *ignored){
 
             int idx = 0;
             for (int i = delete_rows; i < 21; i++) {
-                strcpy(sever_buff[hd++], sever_buff[i]);
+                strcpy(sever_buff[idx++], sever_buff[i]);
                 for (int j = 0; j < 64; j++) {
                     fbputchar(sever_buff[i][j], hd, i);
                 }
             }
             rows = idx;
-            fbputs(recvBuf, row, 0);
+            fbputs(recvBuf, rows, 0);
             dialogue_row += rows;
         }
         else {
@@ -308,7 +308,7 @@ void *network_thread_f(void *ignored){
                     rows++;
                     col = 0;
                 }
-                dialogueBuf[rows][col++] = recvBuf[i];
+                sever_buff[rows][col++] = recvBuf[i];
             }
             rows++;
         }
