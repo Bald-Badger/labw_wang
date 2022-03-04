@@ -160,7 +160,7 @@ int main()
 
             /* ------ looking at some special keyboard operations ------ */
 
-            /*
+
             if (packet.keycode[0] == 0x28 || packet.keycode[1] == 0x28) // first key or second key pressed
             {
                 textbox[textcount] = '\0';
@@ -178,7 +178,7 @@ int main()
                     }
                 }
                 continue;
-            }*/
+            }
 
 
             if (packet.keycode[0] == 0x2a)
@@ -277,18 +277,9 @@ int main()
 
 
 
-            fbputchar(cursor, cursor_row, cursor_col); /* move cursor to the next spot and display */
+            fbputchar(cursor, cursor_row, cursor_col);
         }
     }
-    /* ------------- put keyboard inputs to textbox below ------------- */
-
-    /* Terminate the network thread */
-    pthread_cancel(network_thread);
-
-    /* Wait for the network thread to finish */
-    pthread_join(network_thread, NULL);
-
-    return 0;
 }
 
 void *network_thread_f(void *ignored)
