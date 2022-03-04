@@ -113,20 +113,6 @@ int main()
         exit(1);
     }
 
-    /*
-    int buff_size = 48;
-    char type_buff[buff_size];
-    int n;
-    int line_num = 20;
-
-    n = read(sockfd, &tempBuf, buff_size - 1);
-    tempBuf[n] = '\0'; /* make sure the string is null-terminated */
-    printf("%s", tempBuf);
-    if (line_num < DISPLAY_ROWS)
-    {
-        fbputs(tempBuf, line_num, 10);
-        line_num += 1;
-    } */
 
     // clean screen TODO
     fbputs("Press any key to clean screen", 13, 10); // row col
