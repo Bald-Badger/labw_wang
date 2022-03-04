@@ -265,7 +265,7 @@ void print_empty_space(int start_i, int end_i, int start_j, int end_j){
 
 void *network_thread_f(void *ignored){
     int buff_size = 200;
-    int server_row = 21
+    int server_row = 21;
     int server_col = 64;
     char recvBuf[buff_size];
     int n;
