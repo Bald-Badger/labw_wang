@@ -373,7 +373,7 @@ void *network_thread_f(void *ignored)
 
 
 
-/* Scroll down the textbox */
+/* Scroll down the textbox */ // delete
 void scroll_textbox(char *buffer, int count, int window_size, int lower_bound)
 {
     for (int i = 1; i <= window_size; i++) {
