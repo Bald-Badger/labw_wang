@@ -204,7 +204,7 @@ int main()
                 else if (((cursor_col == 0) && (cursor_row == DISPLAY_ROWS - 1) && (textcount > DISPLAY_COLS)))
                 {
                     cursor_col = DISPLAY_COLS - 1;                                 /* let two lines be filled */
-                    scrollup_textbox(textbox, textcount, TEXT_ROWS, DISPLAY_ROWS); /* move down one line, and print the first line */
+                    //scrollup_textbox(textbox, textcount, TEXT_ROWS, DISPLAY_ROWS); /* move down one line, and print the first line */
                 }
                 else
                 {
