@@ -242,17 +242,9 @@ int main()
                     cursor_col += 1;
                 }
             }
-            /*
-            else if ((!has_second) && (debouncing_char != 0) && (exchange_char == k1))
-            {
-                prev_single = 1;
-                exchange_char = 0;
-            }*/
-
             fbputchar(cursor, cursor_row, cursor_col);
         }
     }
-    /* ------------- put keyboard inputs to textbox below ------------- */
 
     /* Terminate the network thread */
     pthread_cancel(network_thread);
@@ -276,8 +268,8 @@ void *network_thread_f(void *ignored){
     int buff_size = 200;
     char recvBuf[buff_size];
     int n;
-    int server_msg_rows; // incoming msg rows
-    char dialogueBuf[DIALOGUE_ROWS][DISPLAY_COLS];
+    int rows;
+    char sever_buff[DIALOGUE_ROWS][DISPLAY_COLS];
 
     while ((n = read(sockfd, &recvBuf, buff_size - 1)) > 0)
     {
@@ -288,9 +280,9 @@ void *network_thread_f(void *ignored){
 
         if (server_msg_rows + dialogue_row > DIALOGUE_ROWS)
         {
-            int delete_rows = server_msg_rows + dialogue_row - DIALOGUE_ROWS;
+            int delete_rows = rows + dialogue_row - DIALOGUE_ROWS;
             for (int i = 0; i < delete_rows; i++) {
-                memset(dialogueBuf[i], '\0', sizeof(dialogueBuf[i]));
+                memset(sever_buff[i], '\0', sizeof(sever_buff[i]));
                 for (int j = 0; j < DISPLAY_COLS; j++) {
                     fbputchar(' ', i, j);
                 }
@@ -298,29 +290,28 @@ void *network_thread_f(void *ignored){
 
             int hd = 0;
             for (int i = delete_rows; i < DISPLAY_ROWS; i++) {
-                strcpy(dialogueBuf[hd++], dialogueBuf[i]);
+                strcpy(sever_buff[hd++], sever_buff[i]);
                 for (int j = 0; j < DISPLAY_COLS; j++) {
                     fbputchar(dialogueBuf[i][j], hd, i);
                 }
             }
             dialogue_row = hd;
-            fbputs(recvBuf, dialogue_row, 0);
-            dialogue_row += server_msg_rows;
+            fbputs(recvBuf, row, 0);
+            dialogue_row += rows;
         }
         else {
             fbputs(recvBuf, dialogue_row, 0);
             col = 0;
             for (int i = 0; i < n; i++) {
                 if (col >= DISPLAY_COLS) {
-                    dialogue_row++;
+                    rows++;
                     col = 0;
                 }
-                dialogueBuf[dialogue_row][col++] = recvBuf[i];
+                dialogueBuf[rows][col++] = recvBuf[i];
             }
-            dialogue_row++;
+            rows++;
         }
     }
-
     return NULL;
 }
 
