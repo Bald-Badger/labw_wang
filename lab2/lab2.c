@@ -267,31 +267,12 @@ int main()
                 continue;
             }
 
-            /* ------------- put keyboard inputs to textbox below ------------- */
-            /*
-            char ck1, ck2;
-            char modifier[3], key1[3], key2[3];
-            slice_str(keystate, modifier, 0, 1);
-            slice_str(keystate, key1, 3, 4);
-            slice_str(keystate, key2, 6, 7);
-
-            int m = hex2int(modifier), k1 = hex2int(key1), k2 = hex2int(key2);
-
-            printf("hex: %s, dec: %d\n", modifier, m);
-            printf("hex: %s, dec: %d\n", key1, k1);
-            printf("hex: %s, dec: %d\n", key2, k2);
-            */
-
-
             // 1. keystate to char "01 03 04"
             int m = get_acsii(keystate, 0, 1);
-            int ck1 = get_acsii(keystate, 3, 4);
-            int ck2 = get_acsii(keystate, 6, 7);
-            //printf("%d, %d, %d\n", m , key1, key2);
+            int k1 = get_acsii(keystate, 3, 4);
+            int k2 = get_acsii(keystate, 6, 7);
 
             fbputchar(' ', cursor_row, cursor_col); /* erase cursor */
-            //ck1 = dec2chr(k1);
-            //ck1 = handle_modifier(m, ck1);
 
             /* handle character from the first input */
             if ((prev_single || debouncing_char == 0) && (!has_second || prevheld_char != ck1) && (exchange_char != ck1))
@@ -299,9 +280,9 @@ int main()
                 input_counts += 1;
                 fbputchar(ck1, cursor_row, cursor_col); /* display input */
                 /* put the first keyboard inputs in a buffer, make it avaliable to be sent */
-                textbox[textcount++] = ck1;
+                textbox[textcount++] = k1;
 
-                prevheld_char = ck1;
+                prevheld_char = k1;
                 exchange_char = 0;
                 if (!has_second)
                     prev_single = 1;
@@ -328,22 +309,17 @@ int main()
                 exchange_char = 0;
             }
 
-            /* handle character from the second input */
-            //if (has_second)
-            //{
-            //    ck2 = dec2chr(k2);
-            //    ck2 = handle_modifier(m, ck2);
-            //}
-            if ((has_second) && (exchange_char != ck2))
+
+            if ((has_second) && (exchange_char != k2))
             {
                 input_counts += 1;
                 fbputchar(ck2, cursor_row, cursor_col);
                 /* put the second keyboard input in a buffer */
-                textbox[textcount++] = ck2;
+                textbox[textcount++] = k2;
 
-                debouncing_char = ck2;
+                debouncing_char = k2;
                 prevheld_char = 0;
-                exchange_char = ck2;
+                exchange_char = k2;
                 prev_single = 0;
 
                 /* move cursor and print cursor on the scrren accordingly */
@@ -505,7 +481,6 @@ char handle_modifier(int m, int k)
     }
     return k;
 }
-
 
 int get_acsii(const char * str, int start, int end) {
     // 1.key code 2 int
