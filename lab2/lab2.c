@@ -227,8 +227,6 @@ int main()
 
                 prevheld_char = k1;
                 exchange_char = 0;
-                if (!has_second)
-                    prev_single = 1;
 
                 if ((cursor_col == DISPLAY_COLS - 1) && (cursor_row < DISPLAY_ROWS - 1)) {
                     cursor_col = 0;
@@ -279,7 +277,7 @@ void *network_thread_f(void *ignored){
         if (n % 4 == 0) rows = n / 64;
         else rows = n / 64 + 1;
 
-        if (server_msg_rows + dialogue_row > 21)
+        if (server_rows + rows > 21)
         {
             int delete_rows = rows + dialogue_row - 21;
             for (int i = 0; i < delete_rows; i++) {
@@ -293,7 +291,7 @@ void *network_thread_f(void *ignored){
             for (int i = delete_rows; i < 21; i++) {
                 strcpy(sever_buff[idx++], sever_buff[i]);
                 for (int j = 0; j < 64; j++) {
-                    fbputchar(sever_buff[i][j], hd, i);
+                    fbputchar(sever_buff[i][j], idx, i);
                 }
             }
             rows = idx;
