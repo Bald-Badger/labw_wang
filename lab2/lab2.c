@@ -31,6 +31,10 @@
 #define DIALOGUE_ROWS 21
 #define TEXT_ROWS 2
 
+#define ROWS 24
+#define COLS 64
+#define TEXT_START_ROW 20
+
 int sockfd;           /* Socket file descriptor */
 int dialogue_row = 0; // display server msg on dialogue_row
 
@@ -286,8 +290,8 @@ int main()
             //printf("%d, %d, %d\n", m , key1, key2);
 
             fbputchar(' ', cursor_row, cursor_col); /* erase cursor */
-            ck1 = dec2chr(k1);
-            ck1 = handle_modifier(m, ck1);
+            //ck1 = dec2chr(k1);
+            //ck1 = handle_modifier(m, ck1);
 
             /* handle character from the first input */
             if ((prev_single || debouncing_char == 0) && (!has_second || prevheld_char != ck1) && (exchange_char != ck1))
