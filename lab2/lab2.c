@@ -329,11 +329,11 @@ int main()
             }
 
             /* handle character from the second input */
-            if (has_second)
-            {
-                ck2 = dec2chr(k2);
-                ck2 = handle_modifier(m, ck2);
-            }
+            //if (has_second)
+            //{
+            //    ck2 = dec2chr(k2);
+            //    ck2 = handle_modifier(m, ck2);
+            //}
             if ((has_second) && (exchange_char != ck2))
             {
                 input_counts += 1;
