@@ -27,7 +27,6 @@
 
 #define DISPLAY_COLS 64
 #define DISPLAY_ROWS 24
-#define DIALOGUE_ROWS 21
 #define TEXT_ROWS 2
 
 #define ROWS 24
@@ -266,36 +265,38 @@ void print_empty_space(int start_i, int end_i, int start_j, int end_j){
 
 void *network_thread_f(void *ignored){
     int buff_size = 200;
+    int server_row = 21
+    int server_col = 64;
     char recvBuf[buff_size];
     int n;
     int rows;
-    char sever_buff[DIALOGUE_ROWS][DISPLAY_COLS];
+    char sever_buff[server_row][server_col];
 
     while ((n = read(sockfd, &recvBuf, buff_size - 1)) > 0)
     {
         int col = 0;
         recvBuf[n] = '\0';
-        if (n % 4 == 0) server_msg_rows = n / 64;
+        if (n % 4 == 0) rows = n / 64;
         else server_msg_rows = n / 64 + 1;
 
-        if (server_msg_rows + dialogue_row > DIALOGUE_ROWS)
+        if (server_msg_rows + dialogue_row > 21)
         {
-            int delete_rows = rows + dialogue_row - DIALOGUE_ROWS;
+            int delete_rows = rows + dialogue_row - 21;
             for (int i = 0; i < delete_rows; i++) {
                 memset(sever_buff[i], '\0', sizeof(sever_buff[i]));
-                for (int j = 0; j < DISPLAY_COLS; j++) {
+                for (int j = 0; j < 64; j++) {
                     fbputchar(' ', i, j);
                 }
             }
 
-            int hd = 0;
-            for (int i = delete_rows; i < DISPLAY_ROWS; i++) {
+            int idx = 0;
+            for (int i = delete_rows; i < 21; i++) {
                 strcpy(sever_buff[hd++], sever_buff[i]);
-                for (int j = 0; j < DISPLAY_COLS; j++) {
-                    fbputchar(dialogueBuf[i][j], hd, i);
+                for (int j = 0; j < 64; j++) {
+                    fbputchar(sever_buff[i][j], hd, i);
                 }
             }
-            dialogue_row = hd;
+            rows = idx;
             fbputs(recvBuf, row, 0);
             dialogue_row += rows;
         }
