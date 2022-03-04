@@ -48,7 +48,6 @@ void clear_display();
 void draw_cutline();
 void scroll_textbox(char *, int, int, int);
 void scrollup_textbox(char *, int, int, int);
-char handle_modifier(int, int);
 
 int main()
 {
@@ -180,10 +179,6 @@ int main()
                 continue;
             }
 
-            if (packet.keycode[0] == 0x29)
-            { /* ESC pressed */
-                break;
-            }
 
             if (packet.keycode[0] == 0x2a)
             { /* backspace pressed */
@@ -239,7 +234,6 @@ int main()
             }
 
             // 1. keystate to char "01 03 04"
-            int m = get_acsii(keystate, 0, 1);
             int k1 = get_acsii(keystate, 3, 4);
             int k2 = get_acsii(keystate, 6, 7);
 
@@ -324,7 +318,6 @@ int main()
     return 0;
 }
 
-/*
 void *network_thread_f(void *ignored)
 {
     int buff_size = 200;
@@ -337,14 +330,8 @@ void *network_thread_f(void *ignored)
     {
         int col = 0;
         recvBuf[n] = '\0';
-        if (n % 4 == 0)
-        {
-            server_msg_rows = n / 64;
-        }
-        else
-        {
-            server_msg_rows = n / 64 + 1;
-        }
+        if (n % 4 == 0) server_msg_rows = n / 64;
+        else server_msg_rows = n / 64 + 1;
 
         if (server_msg_rows + dialogue_row > DIALOGUE_ROWS)
         {
@@ -395,21 +382,7 @@ void *network_thread_f(void *ignored)
 
     return NULL;
 }
-*/
 
-void *network_thread_f(void *ignored)
-{
-    char recvBuf[BUFFER_SIZE];
-    int n;
-    /* Receive data */
-    while ( (n = read(sockfd, &recvBuf, BUFFER_SIZE - 1)) > 0 ) {
-        recvBuf[n] = '\0';
-        printf("%s", recvBuf);
-        fbputs(recvBuf, 8, 0);
-    }
-
-    return NULL;
-}
 
 
 /* Scroll down the textbox */
@@ -456,14 +429,6 @@ void scrollup_textbox(char *buffer, int count, int window_size, int lower_bound)
     }
 }
 
-char handle_modifier(int m, int k)
-{
-    if (m == 2)
-    { // modifier consider only shift (cap letter)
-        k -= 32;
-    }
-    return k;
-}
 
 int get_acsii(const char * str, int start, int end) {
     // 1.key code 2 int
