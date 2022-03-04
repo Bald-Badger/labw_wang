@@ -160,7 +160,7 @@ int main()
 
             /* ------ looking at some special keyboard operations ------ */
 
-            /*
+
             if (packet.keycode[0] == 0x28 || packet.keycode[1] == 0x28) // first key or second key pressed
             {
                 textbox[textcount] = '\0';
@@ -178,7 +178,7 @@ int main()
                     }
                 }
                 continue;
-            }*/
+            }
 
 
             if (packet.keycode[0] == 0x2a)
@@ -336,42 +336,29 @@ void *network_thread_f(void *ignored)
 
         if (server_msg_rows + dialogue_row > DIALOGUE_ROWS)
         {
-            // the msg reaches the input textbox
             int delete_rows = server_msg_rows + dialogue_row - DIALOGUE_ROWS;
-            // scroll up
-            for (int k = 0; k < delete_rows; k++)
-            {
-                // delete buffer
-                memset(dialogueBuf[k], '\0', sizeof(dialogueBuf[k]));
-                // delete screen output
-                for (int ck = 0; ck < DISPLAY_COLS; ck++)
-                {
-                    fbputchar(' ', k, ck);
+            for (int i = 0; i < delete_rows; i++) {
+                memset(dialogueBuf[i], '\0', sizeof(dialogueBuf[k]));
+                for (int j = 0; j < DISPLAY_COLS; j++) {
+                    fbputchar(' ', i, j);
                 }
             }
             int hd = 0;
-            for (int j = delete_rows; j < DISPLAY_ROWS; j++)
-            {
-                // update buffer
-                strcpy(dialogueBuf[hd++], dialogueBuf[j]);
-                // update screen output
-                for (int cj = 0; cj < DISPLAY_COLS; cj++)
-                {
-                    fbputchar(dialogueBuf[j][cj], hd, cj);
+            for (int i = delete_rows; i < DISPLAY_ROWS; i++) {
+                strcpy(dialogueBuf[hd++], dialogueBuf[i]);
+                for (int j = 0; j < DISPLAY_COLS; j++) {
+                    fbputchar(dialogueBuf[i][j], hd, i);
                 }
             }
             dialogue_row = hd;
             fbputs(recvBuf, dialogue_row, 0);
-            dialogue_row += server_msg_rows; // update dialogue rows to next available row
+            dialogue_row += server_msg_rows;
         }
-        else
-        {
+        else {
             fbputs(recvBuf, dialogue_row, 0);
             col = 0;
-            for (int i = 0; i < n; i++)
-            {
-                if (col >= DISPLAY_COLS)
-                {
+            for (int i = 0; i < n; i++) {
+                if (col >= DISPLAY_COLS) {
                     dialogue_row++;
                     col = 0;
                 }
