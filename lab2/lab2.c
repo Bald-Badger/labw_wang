@@ -22,6 +22,7 @@
 #define SERVER_PORT 42000
 
 #define BUFFER_SIZE 128
+#define SMALL_BUFFER_SIZE 48 /* 47 + 1 null terminator */
 #define TEXTBOX_BUFFER 1024
 #define DIALOGUE_BUFFER 2048
 
@@ -30,9 +31,13 @@
 #define DIALOGUE_ROWS 21
 #define TEXT_ROWS 2
 
-#define ROWS 24
-#define COLS 64
-#define TEXT_START_ROW 20
+/*
+ * References:
+ *
+ * http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
+ * http://www.thegeekstuff.com/2011/12/c-socket-programming/
+ *
+ */
 
 int sockfd;           /* Socket file descriptor */
 int dialogue_row = 0; // display server msg on dialogue_row
@@ -43,11 +48,14 @@ uint8_t endpoint_address;
 pthread_t network_thread;
 void *network_thread_f(void *);
 
-int get_acsii(const char *, int, int);
 void clear_display();
 void draw_cutline();
 void scroll_textbox(char *, int, int, int);
 void scrollup_textbox(char *, int, int, int);
+int hex2int(char *);
+void slice_str(const char *, char *, size_t, size_t);
+char dec2chr(int);
+char handle_modifier(int, int);
 
 int main()
 {
@@ -111,25 +119,43 @@ int main()
         exit(1);
     }
 
-    // clean screen TODO
-    fbputs("Press any key to clean screen", 13, 10); // row col
-    for (;;) {
-        libusb_interrupt_transfer(keyboard, endpoint_address, (unsigned char *) &packet, sizeof(packet), &transferred, 0);
-        if (transferred == sizeof(packet)) {
-            sprintf(keystate, "first print %02x %02x %02x", packet.modifiers, packet.keycode[0], packet.keycode[1]);
+    /* ------------------------ code added below ------------------------ */
+    /* Read inputs from socket and print before the program starts */
+    /* incoming information shouldn't exceed BUFFER_SIZE bits */
+    char tempBuf[SMALL_BUFFER_SIZE];
+    int n;
+    int line_num = 20;
+
+    /* reading and printing message from server before it starts */
+    n = read(sockfd, &tempBuf, SMALL_BUFFER_SIZE - 1);
+    tempBuf[n] = '\0'; /* make sure the string is null-terminated */
+    printf("%s", tempBuf);
+    /* divide message been read into multiple lines */
+    if (line_num < DISPLAY_ROWS)
+    {
+        fbputs(tempBuf, line_num, 10);
+        line_num += 1;
+    }
+
+    fbputs("Press Any Key to Start", 12, 10);
+
+    /* Program initialization upon pressing a key */
+    for (;;)
+    {
+        libusb_interrupt_transfer(keyboard, endpoint_address,
+                                  (unsigned char *)&packet, sizeof(packet),
+                                  &transferred, 0);
+        if (transferred == sizeof(packet))
+        {
+            sprintf(keystate, "%02x %02x %02x", packet.modifiers, packet.keycode[0],
+                    packet.keycode[1]);
             printf("%s\n", keystate);
-            if ((packet.modifiers != 0x00) || (packet.keycode[0] != 0x00) || (packet.keycode[1] != 0x00)) {
-                // 0.1 clean screen
-                for (int i = 0; i < ROWS; i++) {
-                    for (int j = 0; j < COLS; j++) {
-                        fbputchar(' ', i, j);
-                    }
-                }
-                // 0.2 draw first line
-                for (int j = 0; j < COLS; j++) {
-                    fbputchar('*', TEXT_START_ROW, j);
-                }
-                break; // only one time
+            if ((packet.modifiers != 0x00) | (packet.keycode[0] != 0x00) |
+                (packet.keycode[1] != 0x00))
+            { /* a key pressed */
+                clear_display();
+                draw_cutline();
+                break;
             }
         }
     }
@@ -137,6 +163,8 @@ int main()
     char cursor;
     cursor = 95; /* ASCII entry, underline serves as cursor */
     fbputchar(cursor, cursor_row, cursor_col);
+
+    /* ------------------------ code added above ------------------------ */
 
     /* Start the network thread */
     pthread_create(&network_thread, NULL, network_thread_f, NULL);
@@ -150,13 +178,15 @@ int main()
     {
         int has_second = 0;
         int input_counts = 0;
-        libusb_interrupt_transfer(keyboard, endpoint_address, (unsigned char *)&packet, sizeof(packet), &transferred, 0);
 
-
+        libusb_interrupt_transfer(keyboard, endpoint_address,
+                                  (unsigned char *)&packet, sizeof(packet), &transferred, 0);
         if (transferred == sizeof(packet))
         {
             sprintf(keystate, "%02x %02x %02x", packet.modifiers, packet.keycode[0], packet.keycode[1]);
             printf("original keystate: %s\n", keystate); // show on the terminal
+
+            /* ------ looking at some special keyboard operations ------ */
 
             if (packet.keycode[0] == 0x28 || packet.keycode[1] == 0x28) // first key or second key pressed
             {
@@ -177,6 +207,10 @@ int main()
                 continue;
             }
 
+            if (packet.keycode[0] == 0x29)
+            { /* ESC pressed */
+                break;
+            }
 
             if (packet.keycode[0] == 0x2a)
             { /* backspace pressed */
@@ -195,7 +229,7 @@ int main()
 
                 if ((cursor_col == 0) && (cursor_row == DISPLAY_ROWS - 1) && (textcount <= DISPLAY_COLS))
                 {
-                    cursor_col = DISPLAY_COLS - 1;
+                    cursor_col = DISPLAY_COLS - 1; /* all things left fit in the top line */
                     cursor_row -= 1;
                 }
                 else if (((cursor_col == 0) && (cursor_row == DISPLAY_ROWS - 1) && (textcount > DISPLAY_COLS)))
@@ -214,7 +248,22 @@ int main()
                 continue;
             }
 
+            if (packet.keycode[0] == 0x5c)
+            { /* left arrow pressed */
+            }
 
+            if (packet.keycode[0] == 0x5e)
+            { /* right arrow pressed */
+            }
+
+            /* -------- conditional checks for number of inputs  -------- */
+            /* check if there are two key presses from the packet */
+            if (packet.keycode[1] != 0x00)
+            {
+                has_second = 1;
+            }
+
+            /* check if it's an end signifier */
             if ((packet.modifiers == 0x00) && (packet.keycode[0] == 0x00) && (packet.keycode[1] == 0x00))
             {
                 prevheld_char = 0;
@@ -224,26 +273,40 @@ int main()
                 continue;
             }
 
-            // 1. keystate to char "01 03 04"
-            int k1 = get_acsii(keystate, 3, 4);
-            int k2 = get_acsii(keystate, 6, 7);
+            /* ------------- put keyboard inputs to textbox below ------------- */
+            char ck1, ck2;
+            char modifier[3], key1[3], key2[3];
+            slice_str(keystate, modifier, 0, 1);
+            slice_str(keystate, key1, 3, 4);
+            slice_str(keystate, key2, 6, 7);
 
-            fbputchar(' ', cursor_row, cursor_col);
+            int m = hex2int(modifier), k1 = hex2int(key1), k2 = hex2int(key2);
 
-            if ((prev_single || debouncing_char == 0) && (!has_second || prevheld_char != k1) && (exchange_char != k1))
+            printf("hex: %s, dec: %d\n", modifier, m);
+            printf("hex: %s, dec: %d\n", key1, k1);
+            printf("hex: %s, dec: %d\n", key2, k2);
+
+            fbputchar(' ', cursor_row, cursor_col); /* erase cursor */
+            ck1 = dec2chr(k1);
+            ck1 = handle_modifier(m, ck1);
+
+            /* handle character from the first input */
+            if ((prev_single || debouncing_char == 0) && (!has_second || prevheld_char != ck1) && (exchange_char != ck1))
             {
                 input_counts += 1;
-                fbputchar(k1, cursor_row, cursor_col);
-                textbox[textcount++] = k1;
+                fbputchar(ck1, cursor_row, cursor_col); /* display input */
+                /* put the first keyboard inputs in a buffer, make it avaliable to be sent */
+                textbox[textcount++] = ck1;
 
-                prevheld_char = k1;
+                prevheld_char = ck1;
                 exchange_char = 0;
                 if (!has_second)
                     prev_single = 1;
 
+                /* move cursor and print cursor on the scrren accordingly */
                 if ((cursor_col == DISPLAY_COLS - 1) && (cursor_row < DISPLAY_ROWS - 1))
                 {
-                    cursor_col = 0;
+                    cursor_col = 0; /* index out of the box, line move to the bottom */
                     cursor_row += 1;
                 }
                 else if ((cursor_col == DISPLAY_COLS - 1) && (cursor_row == DISPLAY_ROWS - 1))
@@ -256,53 +319,123 @@ int main()
                     cursor_col += 1;
                 }
             }
+            else if ((!has_second) && (debouncing_char != 0) && (exchange_char == ck1))
+            {
+                prev_single = 1; /* debouncing effect takes place here, no input but next input should get ready */
+                exchange_char = 0;
+            }
 
-            fbputchar(cursor, cursor_row, cursor_col);
+            /* handle character from the second input */
+            if (has_second)
+            {
+                ck2 = dec2chr(k2);
+                ck2 = handle_modifier(m, ck2);
+            }
+            if ((has_second) && (exchange_char != ck2))
+            {
+                input_counts += 1;
+                fbputchar(ck2, cursor_row, cursor_col);
+                /* put the second keyboard input in a buffer */
+                textbox[textcount++] = ck2;
+
+                debouncing_char = ck2;
+                prevheld_char = 0;
+                exchange_char = ck2;
+                prev_single = 0;
+
+                /* move cursor and print cursor on the scrren accordingly */
+                if ((cursor_col == DISPLAY_COLS - 1) && (cursor_row < DISPLAY_ROWS - 1))
+                {
+                    cursor_col = 0; /* index out of the box, reset needed */
+                    cursor_row += 1;
+                }
+                else if ((cursor_col == DISPLAY_COLS - 1) && (cursor_row == DISPLAY_ROWS - 1))
+                {
+                    cursor_col = 0; /* index reaches the bottom, textbox screws down */
+                    scroll_textbox(textbox, textcount, TEXT_ROWS, DISPLAY_ROWS);
+                }
+                else
+                {
+                    cursor_col += 1;
+                }
+            }
+
+            fbputchar(cursor, cursor_row, cursor_col); /* move cursor to the next spot and display */
         }
     }
+    /* ------------- put keyboard inputs to textbox below ------------- */
+
+    /* Terminate the network thread */
+    pthread_cancel(network_thread);
+
+    /* Wait for the network thread to finish */
+    pthread_join(network_thread, NULL);
+
+    return 0;
 }
 
 void *network_thread_f(void *ignored)
 {
-    int buff_size = 200;
-    char socket_buff[buff_size];
+    char recvBuf[BUFFER_SIZE];
     int n;
     int server_msg_rows; // incoming msg rows
     char dialogueBuf[DIALOGUE_ROWS][DISPLAY_COLS];
-
-    while ((n = read(sockfd, &socket_buff, buff_size - 1)) > 0)
+    /* Receive data */
+    while ((n = read(sockfd, &recvBuf, BUFFER_SIZE - 1)) > 0)
     {
+        printf("thread is listening...\n");
         int col = 0;
         recvBuf[n] = '\0';
-        if (n % 4 == 0) server_msg_rows = n / 64;
-        else server_msg_rows = n / 64 + 1;
+        printf("has listened: %s\n", recvBuf);
+        if (n % 4 == 0)
+        {
+            server_msg_rows = n / 64;
+        }
+        else
+        {
+            server_msg_rows = n / 64 + 1;
+        }
+
+        // printf("%s", recvBuf);
 
         if (server_msg_rows + dialogue_row > DIALOGUE_ROWS)
         {
+            // the msg reaches the input textbox
             int delete_rows = server_msg_rows + dialogue_row - DIALOGUE_ROWS;
+            // scroll up
             for (int k = 0; k < delete_rows; k++)
             {
+                // delete buffer
                 memset(dialogueBuf[k], '\0', sizeof(dialogueBuf[k]));
-                for (int ck = 0; ck < DISPLAY_COLS; ck++) {
+                // delete screen output
+                for (int ck = 0; ck < DISPLAY_COLS; ck++)
+                {
                     fbputchar(' ', k, ck);
                 }
             }
             int hd = 0;
-            for (int j = delete_rows; j < DISPLAY_ROWS; j++) {
+            for (int j = delete_rows; j < DISPLAY_ROWS; j++)
+            {
+                // update buffer
                 strcpy(dialogueBuf[hd++], dialogueBuf[j]);
-                for (int cj = 0; cj < DISPLAY_COLS; cj++) {
+                // update screen output
+                for (int cj = 0; cj < DISPLAY_COLS; cj++)
+                {
                     fbputchar(dialogueBuf[j][cj], hd, cj);
                 }
             }
             dialogue_row = hd;
             fbputs(recvBuf, dialogue_row, 0);
-            dialogue_row += server_msg_rows;
+            dialogue_row += server_msg_rows; // update dialogue rows to next available row
         }
-        else {
+        else
+        {
             fbputs(recvBuf, dialogue_row, 0);
             col = 0;
-            for (int i = 0; i < n; i++) {
-                if (col >= DISPLAY_COLS) {
+            for (int i = 0; i < n; i++)
+            {
+                if (col >= DISPLAY_COLS)
+                {
                     dialogue_row++;
                     col = 0;
                 }
@@ -315,23 +448,137 @@ void *network_thread_f(void *ignored)
     return NULL;
 }
 
-int get_acsii(const char * str, int start, int end) {
-    // 1.key code 2 int
-    int res = 0;
-    int i = start;
-    while (i <= end) {
-        if ('0' <= str[i] && str[i] <= '9') {
-            res  = res * 16 + str[i] - 48;
-        } else if ('A' <= str[i] && str[i] <= 'F') {
-            res  = res * 16 + str[i] - 55;
-        } else if ('a' <= str[i] && str[i] <= 'f') {
-            res  = res * 16 + str[i] - 87;
+/* ------------------------ extra helper functions below ------------------------ */
+/* Clear everything in the display */
+void clear_display()
+{
+    for (int row = 0; row < DISPLAY_ROWS; row++)
+    {
+        for (int col = 0; col < DISPLAY_COLS; col++)
+        {
+            fbputchar(' ', row, col); /* clear the row, prepare for rewrite */
         }
-        i += 1;
     }
-    // 2. int 2 ascii
-    if (res >= 4 && res <= 29) {
-        res += 93;
-    }
-    return res;
 }
+
+/* Draw cutline between dialogue box and textbox */
+void draw_cutline()
+{
+    /* Draw rows of asterisks across dialogue window and textbox */
+    for (int col = 0; col < 64; col++)
+    {
+        fbputchar('*', DISPLAY_ROWS - TEXT_ROWS - 1, col);
+    }
+}
+
+/* Scroll down the textbox */
+void scroll_textbox(char *buffer, int count, int window_size, int lower_bound)
+{
+    for (int index = 1; index <= window_size; index++)
+    {
+        for (int col = 0; col < 64; col++)
+        {
+            fbputchar(' ', lower_bound - index, col); /* clear the row, prepare for rewrite */
+        }
+    }
+    int offset = 0;
+    for (int index = 2; index <= window_size; index++)
+    {
+        for (int col = 63; col >= 0; col--)
+        {
+            offset += 1;
+            char c = buffer[count - offset];
+            fbputchar(c, lower_bound - index, col); /* fill the row */
+        }
+    }
+}
+
+/* Scroll up the textbox */
+void scrollup_textbox(char *buffer, int count, int window_size, int lower_bound)
+{
+    for (int index = 1; index <= window_size; index++)
+    {
+        for (int col = 63; col >= 0; col--)
+        {
+            fbputchar(' ', lower_bound - index, col); /* clear the rows, prepare for rewrite */
+        }
+    }
+    int offset = 0;
+    for (int index = 1; index <= window_size; index++)
+    {
+        for (int col = 63; col >= 0; col--)
+        {
+            char c = buffer[count - offset];
+            fbputchar(c, lower_bound - index, col); /* fill the row */
+            offset += 1;
+        }
+    }
+}
+
+/* hexadecimal to decimal conversion */
+int hex2int(char *hex)
+{
+    int decimal = 0, base = 1;
+    int length = strlen(hex);
+    for (int i = length--; i >= 0; i--)
+    {
+        if (hex[i] >= '0' && hex[i] <= '9')
+        {
+            decimal += (hex[i] - 48) * base;
+            base *= 16;
+        }
+        else if (hex[i] >= 'A' && hex[i] <= 'F')
+        {
+            decimal += (hex[i] - 55) * base;
+            base *= 16;
+        }
+        else if (hex[i] >= 'a' && hex[i] <= 'f')
+        {
+            decimal += (hex[i] - 87) * base;
+            base *= 16;
+        }
+    }
+    return decimal;
+}
+
+void slice_str(const char *str, char *buffer, size_t start, size_t end)
+{
+    size_t j = 0;
+    for (size_t i = start; i <= end; ++i)
+    {
+        buffer[j++] = str[i];
+    }
+    buffer[j] = 0;
+}
+
+/* ASCII index conversion */
+char dec2chr(int key)
+{
+    if (key >= 4 && key <= 29)
+    {
+        key += 93; // lower case by default
+    }
+    else if (key >= 30 && key <= 38)
+    {
+        key += 19; // numerical conversion of 30 to 38
+    }
+    else if (key == 39)
+    {
+        key = 48; // numerical conversion of 0
+    }
+    else if (key == 44)
+    {
+        key = 32; // space
+    }
+    return key;
+}
+
+char handle_modifier(int m, int k)
+{
+    if (m == 2)
+    { // modifier consider only shift (cap letter)
+        k -= 32;
+    }
+    return k;
+}
+
