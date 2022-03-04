@@ -303,7 +303,7 @@ int main()
                     cursor_col += 1;
                 }
             }
-            else if ((!has_second) && (debouncing_char != 0) && (exchange_char == ck1))
+            else if ((!has_second) && (debouncing_char != 0) && (exchange_char == k1))
             {
                 prev_single = 1; /* debouncing effect takes place here, no input but next input should get ready */
                 exchange_char = 0;
