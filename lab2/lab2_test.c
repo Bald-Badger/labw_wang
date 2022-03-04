@@ -28,7 +28,6 @@
 
 #define DISPLAY_COLS 64
 #define DISPLAY_ROWS 24
-#define DIALOGUE_ROWS 21
 #define TEXT_ROWS 2
 
 /*
@@ -171,22 +170,25 @@ int main()
 
     char prevheld_char = 0;
     char debouncing_char = 0;
-    char exchange_char = 0; /* char from the second key of prev packet goes to the first key of the next */
+    char exchange_char = 0;
     char prev_single = 0;
 
     for (;;)
     {
-        int has_second = 0;
         int input_counts = 0;
+<<<<<<< HEAD
 
         libusb_interrupt_transfer(keyboard, endpoint_address,
                                   (unsigned char *)&packet, sizeof(packet), &transferred, 0);
+=======
+        libusb_interrupt_transfer(keyboard, endpoint_address, (unsigned char *)&packet, sizeof(packet), &transferred, 0);
+
+>>>>>>> aa0647e579c877ed41266c1772f04bb56e6a0260
         if (transferred == sizeof(packet))
         {
             sprintf(keystate, "%02x %02x %02x", packet.modifiers, packet.keycode[0], packet.keycode[1]);
             printf("original keystate: %s\n", keystate); // show on the terminal
 
-            /* ------ looking at some special keyboard operations ------ */
 
             if (packet.keycode[0] == 0x28 || packet.keycode[1] == 0x28) // first key or second key pressed
             {
@@ -196,14 +198,8 @@ int main()
                 memset(textbox, '\0', textcount);
                 textcount = 0;
                 cursor_col = 0;
-                cursor_row = DIALOGUE_ROWS + 1;
-                for (int row = cursor_row; row < DISPLAY_ROWS; row++)
-                {
-                    for (int col = 0; col < DISPLAY_COLS; col++)
-                    {
-                        fbputchar(' ', row, col);
-                    }
-                }
+                cursor_row = 22;
+                print_empty_space(cursor_row,DISPLAY_ROWS,0,DISPLAY_COLS);
                 continue;
             }
 
@@ -232,11 +228,6 @@ int main()
                     cursor_col = DISPLAY_COLS - 1; /* all things left fit in the top line */
                     cursor_row -= 1;
                 }
-                else if (((cursor_col == 0) && (cursor_row == DISPLAY_ROWS - 1) && (textcount > DISPLAY_COLS)))
-                {
-                    cursor_col = DISPLAY_COLS - 1;                                 /* let two lines be filled */
-                    scrollup_textbox(textbox, textcount, TEXT_ROWS, DISPLAY_ROWS); /* move down one line, and print the first line */
-                }
                 else
                 {
                     cursor_col -= 1;
@@ -257,11 +248,6 @@ int main()
             }
 
             /* -------- conditional checks for number of inputs  -------- */
-            /* check if there are two key presses from the packet */
-            if (packet.keycode[1] != 0x00)
-            {
-                has_second = 1;
-            }
 
             /* check if it's an end signifier */
             if ((packet.modifiers == 0x00) && (packet.keycode[0] == 0x00) && (packet.keycode[1] == 0x00))
@@ -286,6 +272,7 @@ int main()
             printf("hex: %s, dec: %d\n", key1, k1);
             printf("hex: %s, dec: %d\n", key2, k2);
 
+<<<<<<< HEAD
             fbputchar(' ', cursor_row, cursor_col); /* erase cursor */
             ck1 = dec2chr(k1);
             ck1 = handle_modifier(m, ck1);
@@ -297,9 +284,19 @@ int main()
                 fbputchar(ck1, cursor_row, cursor_col); /* display input */
                 /* put the first keyboard inputs in a buffer, make it avaliable to be sent */
                 textbox[textcount++] = ck1;
+=======
+            fbputchar(' ', cursor_row, cursor_col);
+
+            if ((prev_single || debouncing_char == 0) && (prevheld_char != k1) && (exchange_char != k1))
+            {
+                input_counts += 1;
+                fbputchar(k1, cursor_row, cursor_col);
+                textbox[textcount++] = k1;
+>>>>>>> aa0647e579c877ed41266c1772f04bb56e6a0260
 
                 prevheld_char = ck1;
                 exchange_char = 0;
+<<<<<<< HEAD
                 if (!has_second)
                     prev_single = 1;
 
@@ -347,23 +344,23 @@ int main()
                 if ((cursor_col == DISPLAY_COLS - 1) && (cursor_row < DISPLAY_ROWS - 1))
                 {
                     cursor_col = 0; /* index out of the box, reset needed */
+=======
+
+                if ((cursor_col == DISPLAY_COLS - 1) && (cursor_row < DISPLAY_ROWS - 1)) {
+                    cursor_col = 0;
+>>>>>>> aa0647e579c877ed41266c1772f04bb56e6a0260
                     cursor_row += 1;
                 }
-                else if ((cursor_col == DISPLAY_COLS - 1) && (cursor_row == DISPLAY_ROWS - 1))
-                {
-                    cursor_col = 0; /* index reaches the bottom, textbox screws down */
-                    scroll_textbox(textbox, textcount, TEXT_ROWS, DISPLAY_ROWS);
+                else if ((cursor_col == DISPLAY_COLS - 1) && (cursor_row == DISPLAY_ROWS - 1)) {
+                    cursor_col = 0;
                 }
-                else
-                {
+                else {
                     cursor_col += 1;
                 }
             }
-
-            fbputchar(cursor, cursor_row, cursor_col); /* move cursor to the next spot and display */
+            fbputchar(cursor, cursor_row, cursor_col);
         }
     }
-    /* ------------- put keyboard inputs to textbox below ------------- */
 
     /* Terminate the network thread */
     pthread_cancel(network_thread);
@@ -374,6 +371,7 @@ int main()
     return 0;
 }
 
+<<<<<<< HEAD
 void *network_thread_f(void *ignored)
 {
     char recvBuf[BUFFER_SIZE];
@@ -382,10 +380,32 @@ void *network_thread_f(void *ignored)
     char dialogueBuf[DIALOGUE_ROWS][DISPLAY_COLS];
     /* Receive data */
     while ((n = read(sockfd, &recvBuf, BUFFER_SIZE - 1)) > 0)
+=======
+void print_empty_space(int start_i, int end_i, int start_j, int end_j){
+    for (int i = start_i; i < end_i; i++) {
+        for (int j = start_j; j < end_j; j++) {
+            fbputchar(' ', i, j);
+        }
+    }
+}
+
+
+void *network_thread_f(void *ignored){
+    int buff_size = 200;
+    int server_row = 21;
+    int server_col = 64;
+    char recvBuf[buff_size];
+    int n;
+    int rows;
+    char sever_buff[server_row][server_col];
+
+    while ((n = read(sockfd, &recvBuf, buff_size - 1)) > 0)
+>>>>>>> aa0647e579c877ed41266c1772f04bb56e6a0260
     {
         printf("thread is listening...\n");
         int col = 0;
         recvBuf[n] = '\0';
+<<<<<<< HEAD
         printf("has listened: %s\n", recvBuf);
         if (n % 4 == 0)
         {
@@ -397,57 +417,49 @@ void *network_thread_f(void *ignored)
         }
 
         // printf("%s", recvBuf);
+=======
+        if (n % 4 == 0) rows = n / 64;
+        else rows = n / 64 + 1;
+>>>>>>> aa0647e579c877ed41266c1772f04bb56e6a0260
 
-        if (server_msg_rows + dialogue_row > DIALOGUE_ROWS)
+        if (server_row + rows > 21)
         {
-            // the msg reaches the input textbox
-            int delete_rows = server_msg_rows + dialogue_row - DIALOGUE_ROWS;
-            // scroll up
-            for (int k = 0; k < delete_rows; k++)
-            {
-                // delete buffer
-                memset(dialogueBuf[k], '\0', sizeof(dialogueBuf[k]));
-                // delete screen output
-                for (int ck = 0; ck < DISPLAY_COLS; ck++)
-                {
-                    fbputchar(' ', k, ck);
+            int delete_rows = rows + dialogue_row - 21;
+            for (int i = 0; i < delete_rows; i++) {
+                memset(sever_buff[i], '\0', sizeof(sever_buff[i]));
+                for (int j = 0; j < 64; j++) {
+                    fbputchar(' ', i, j);
                 }
             }
-            int hd = 0;
-            for (int j = delete_rows; j < DISPLAY_ROWS; j++)
-            {
-                // update buffer
-                strcpy(dialogueBuf[hd++], dialogueBuf[j]);
-                // update screen output
-                for (int cj = 0; cj < DISPLAY_COLS; cj++)
-                {
-                    fbputchar(dialogueBuf[j][cj], hd, cj);
+
+            int idx = 0;
+            for (int i = delete_rows; i < 21; i++) {
+                strcpy(sever_buff[idx++], sever_buff[i]);
+                for (int j = 0; j < 64; j++) {
+                    fbputchar(sever_buff[i][j], idx, i);
                 }
             }
-            dialogue_row = hd;
-            fbputs(recvBuf, dialogue_row, 0);
-            dialogue_row += server_msg_rows; // update dialogue rows to next available row
+            rows = idx;
+            fbputs(recvBuf, rows, 0);
+            dialogue_row += rows;
         }
-        else
-        {
+        else {
             fbputs(recvBuf, dialogue_row, 0);
             col = 0;
-            for (int i = 0; i < n; i++)
-            {
-                if (col >= DISPLAY_COLS)
-                {
-                    dialogue_row++;
+            for (int i = 0; i < n; i++) {
+                if (col >= DISPLAY_COLS) {
+                    rows++;
                     col = 0;
                 }
-                dialogueBuf[dialogue_row][col++] = recvBuf[i];
+                sever_buff[rows][col++] = recvBuf[i];
             }
-            dialogue_row++;
+            rows++;
         }
     }
-
     return NULL;
 }
 
+<<<<<<< HEAD
 /* ------------------------ extra helper functions below ------------------------ */
 /* Clear everything in the display */
 void clear_display()
@@ -536,6 +548,19 @@ int hex2int(char *hex)
         {
             decimal += (hex[i] - 87) * base;
             base *= 16;
+=======
+int get_acsii(const char * str, int start, int end) {
+    // 1.key code 2 int
+    int res = 0;
+    int i = start;
+    while (i <= end) {
+        if ('0' <= str[i] && str[i] <= '9') {
+            res  = res * 16 + str[i] - 48;
+        } else if ('A' <= str[i] && str[i] <= 'F') {
+            res  = res * 16 + str[i] - 55;
+        } else if ('a' <= str[i] && str[i] <= 'f') {
+            res  = res * 16 + str[i] - 87;
+>>>>>>> aa0647e579c877ed41266c1772f04bb56e6a0260
         }
     }
     return decimal;

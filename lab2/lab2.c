@@ -1,8 +1,8 @@
 /*
  *
- * CSEE 4840 Lab 2 for 2019
+ * CSEE 4840 Lab 2 for Spring 2022
  *
- * Name/UNI: Wang Chen (wc2794)
+ * Name/UNI: Lanxiang Hu (lh3116)
  */
 #include "fbputchar.h"
 #include <stdio.h>
@@ -582,3 +582,4 @@ char handle_modifier(int m, int k)
     return k;
 }
 
+/* ------------------------ extra helper functions above ------------------------ */
